@@ -116,7 +116,7 @@ const Dashboard = () => {
                       <p className="font-medium text-sm group-hover:text-primary transition-premium">{event.title}</p>
                       <p className="text-xs text-muted-foreground flex items-center gap-2">
                         <Clock className="w-3 h-3" />
-                        {new Date(event.start_date).toLocaleDateString()} · ${Number(event.regular_price).toFixed(2)}
+                        {new Date(event.start_date).toLocaleDateString()} · ₹{Number(event.regular_price).toFixed(2)}
                       </p>
                     </div>
                   </div>

@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Calendar, MapPin, Users, IndianRupee, Search, Trash2, Edit, Eye, Zap, Sparkles } from 'lucide-react';
+import { Plus, Calendar, MapPin, Users, IndianRupee, Search, Trash2, Edit, Eye, Zap, Sparkles, Trophy, Medal } from 'lucide-react';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 
 const Events = () => {
@@ -50,13 +50,26 @@ const Events = () => {
     total_seats: 100, regular_price: 0, early_bird_price: 0,
     vip_price: 0, category_id: '', venue_id: '', early_bird_deadline: '',
     status: 'open' as const,
+    prize_first: 0, prize_second: 0, prize_third: 0,
   };
   const [form, setForm] = useState(emptyForm);
+
+  const getFullDescription = () => {
+    let desc = form.description || '';
+    if (form.prize_first || form.prize_second || form.prize_third) {
+      desc += `\n\n---PRIZEPOOL---\n${JSON.stringify({
+        first: form.prize_first,
+        second: form.prize_second,
+        third: form.prize_third
+      })}`;
+    }
+    return desc;
+  };
 
   const createEvent = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from('events').insert({
-        title: form.title, description: form.description || null,
+        title: form.title, description: getFullDescription() || null,
         start_date: form.start_date, end_date: form.end_date,
         total_seats: form.total_seats, available_seats: form.total_seats,
         regular_price: form.regular_price, organizer_id: user!.id,
@@ -75,7 +88,7 @@ const Events = () => {
   const updateEvent = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from('events').update({
-        title: form.title, description: form.description || null,
+        title: form.title, description: getFullDescription() || null,
         start_date: form.start_date, end_date: form.end_date,
         regular_price: form.regular_price,
         category_id: form.category_id || null, venue_id: form.venue_id || null,
@@ -100,14 +113,25 @@ const Events = () => {
   });
 
   const openEdit = (event: any) => {
+    let cleanDesc = event.description || '';
+    let prizes = { first: 0, second: 0, third: 0 };
+    if (cleanDesc.includes('---PRIZEPOOL---')) {
+      const parts = cleanDesc.split('---PRIZEPOOL---');
+      cleanDesc = parts[0].trim();
+      try {
+        prizes = JSON.parse(parts[1].trim());
+      } catch (e) {}
+    }
+
     setEditingEvent(event);
     setForm({
-      title: event.title, description: event.description || '',
+      title: event.title, description: cleanDesc,
       start_date: event.start_date || '', end_date: event.end_date || '',
       total_seats: event.total_seats, regular_price: Number(event.regular_price),
       early_bird_price: Number(event.early_bird_price || 0), vip_price: Number(event.vip_price || 0),
       category_id: event.category_id || '', venue_id: event.venue_id || '',
       early_bird_deadline: event.early_bird_deadline || '', status: event.status,
+      prize_first: prizes.first || 0, prize_second: prizes.second || 0, prize_third: prizes.third || 0,
     });
     setOpen(true);
   };
@@ -139,7 +163,7 @@ const Events = () => {
                 <Plus className="w-4 h-4" /> Create Event
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto glass-strong border-border/50">
+            <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto glass-strong border-border/50">
               <DialogHeader>
                 <DialogTitle className="font-heading text-xl flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-primary" />
@@ -180,11 +204,37 @@ const Events = () => {
                 )}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2"><Label>Total Seats</Label><Input type="number" min={1} required value={form.total_seats} disabled={!!editingEvent} className="bg-secondary/30 border-border/50" onChange={e => setForm(f => ({ ...f, total_seats: +e.target.value }))} /></div>
-                  <div className="space-y-2"><Label>Regular Price ($)</Label><Input type="number" min={0} step="0.01" required value={form.regular_price} className="bg-secondary/30 border-border/50" onChange={e => setForm(f => ({ ...f, regular_price: +e.target.value }))} /></div>
+                  <div className="space-y-2"><Label>Regular Price (₹)</Label><Input type="number" min={0} step="0.01" required value={form.regular_price} className="bg-secondary/30 border-border/50" onChange={e => setForm(f => ({ ...f, regular_price: +e.target.value }))} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2"><Label>Early Bird ($)</Label><Input type="number" min={0} step="0.01" value={form.early_bird_price} className="bg-secondary/30 border-border/50" onChange={e => setForm(f => ({ ...f, early_bird_price: +e.target.value }))} /></div>
-                  <div className="space-y-2"><Label>VIP Price ($)</Label><Input type="number" min={0} step="0.01" value={form.vip_price} className="bg-secondary/30 border-border/50" onChange={e => setForm(f => ({ ...f, vip_price: +e.target.value }))} /></div>
+                  <div className="space-y-2"><Label>Early Bird (₹)</Label><Input type="number" min={0} step="0.01" value={form.early_bird_price} className="bg-secondary/30 border-border/50" onChange={e => setForm(f => ({ ...f, early_bird_price: +e.target.value }))} /></div>
+                  <div className="space-y-2"><Label>VIP Price (₹)</Label><Input type="number" min={0} step="0.01" value={form.vip_price} className="bg-secondary/30 border-border/50" onChange={e => setForm(f => ({ ...f, vip_price: +e.target.value }))} /></div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Early Bird Deadline</Label>
+                  <DateTimePicker 
+                    value={form.early_bird_deadline} 
+                    onChange={v => setForm(f => ({ ...f, early_bird_deadline: v }))} 
+                  />
+                </div>
+
+                {/* Prize Pool Section */}
+                <div className="pt-2 border-t border-border/50">
+                  <Label className="flex items-center gap-2 mb-3 text-neon-purple font-heading font-semibold"><Trophy className="w-4 h-4" /> Prize Pool (₹)</Label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <Label className="text-xs flex items-center gap-1"><Medal className="w-3 h-3 text-yellow-500" /> 1st Prize</Label>
+                      <Input type="number" min={0} value={form.prize_first} className="bg-secondary/30 border-border/50" onChange={e => setForm(f => ({ ...f, prize_first: +e.target.value }))} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs flex items-center gap-1"><Medal className="w-3 h-3 text-gray-400" /> 2nd Prize</Label>
+                      <Input type="number" min={0} value={form.prize_second} className="bg-secondary/30 border-border/50" onChange={e => setForm(f => ({ ...f, prize_second: +e.target.value }))} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs flex items-center gap-1"><Medal className="w-3 h-3 text-orange-500" /> 3rd Prize</Label>
+                      <Input type="number" min={0} value={form.prize_third} className="bg-secondary/30 border-border/50" onChange={e => setForm(f => ({ ...f, prize_third: +e.target.value }))} />
+                    </div>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Early Bird Deadline</Label>
@@ -250,7 +300,9 @@ const Events = () => {
                   </div>
 
                   {event.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {event.description.split('---PRIZEPOOL---')[0]}
+                    </p>
                   )}
 
                   <div className="space-y-1.5 text-sm text-muted-foreground">

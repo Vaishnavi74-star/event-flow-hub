@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import {
   Calendar, MapPin, Users, IndianRupee, ArrowLeft, Ticket, Clock,
-  Star, Tag, Zap, Shield, Sparkles,
+  Star, Tag, Zap, Shield, Sparkles, Trophy, Medal
 } from 'lucide-react';
 import CountdownTimer from '@/components/CountdownTimer';
 import SocialShare from '@/components/SocialShare';
@@ -77,7 +77,18 @@ const EventDetail = () => {
   const avgRating = feedbacks && feedbacks.length > 0
     ? (feedbacks.reduce((s, f) => s + f.rating, 0) / feedbacks.length).toFixed(1) : null;
 
-  const seatPercentage = ((event.total_seats - event.available_seats) / event.total_seats) * 100;
+  const seatPercentage = event ? ((event.total_seats - event.available_seats) / event.total_seats) * 100 : 0;
+
+  // Parse Prize Pool from description if it exists
+  let displayDescription = event?.description || '';
+  let prizePool = null;
+  if (displayDescription.includes('---PRIZEPOOL---')) {
+    const parts = displayDescription.split('---PRIZEPOOL---');
+    displayDescription = parts[0].trim();
+    try {
+      prizePool = JSON.parse(parts[1].trim());
+    } catch (e) {}
+  }
 
   return (
     <div className="space-y-6 animate-fade-in max-w-5xl">
@@ -123,14 +134,54 @@ const EventDetail = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main info */}
         <div className="lg:col-span-2 space-y-5">
-          <Card className="glass glow-border-hover transition-premium overflow-hidden">
-            <CardHeader><CardTitle className="font-heading flex items-center gap-2"><Sparkles className="w-5 h-5 text-primary" /> About</CardTitle></CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground leading-relaxed">{event.description || 'No description provided.'}</p>
-            </CardContent>
-          </Card>
+            <Card className="glass border-none shadow-none bg-transparent sm:col-span-2">
+              <CardContent className="p-0">
+                <h3 className="font-heading font-bold text-xl mb-4 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" /> About This Event
+                </h3>
+                <div className="prose prose-invert max-w-none text-muted-foreground/90 whitespace-pre-line leading-relaxed">
+                  {displayDescription || 'No description provided.'}
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card className="glass glow-border-hover transition-premium overflow-hidden">
+            {prizePool && (prizePool.first > 0 || prizePool.second > 0 || prizePool.third > 0) && (
+              <Card className="glass sm:col-span-2 glow-border overflow-hidden bg-gradient-to-br from-secondary/50 to-transparent">
+                <CardContent className="p-6">
+                  <h3 className="font-heading font-bold text-lg mb-6 flex items-center gap-2 text-neon-purple">
+                    <Trophy className="w-5 h-5" /> Event Prize Pool
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {prizePool.first > 0 && (
+                      <div className="flex flex-col items-center p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 relative overflow-hidden group hover:scale-105 transition-premium">
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-yellow-500/10 rounded-full blur-xl" />
+                        <Medal className="w-10 h-10 text-yellow-500 mb-2 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">1st Prize</p>
+                        <p className="text-xl font-heading font-bold text-yellow-500">₹{prizePool.first}</p>
+                      </div>
+                    )}
+                    {prizePool.second > 0 && (
+                      <div className="flex flex-col items-center p-4 rounded-xl bg-gray-400/10 border border-gray-400/20 relative overflow-hidden group hover:scale-105 transition-premium">
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-gray-400/10 rounded-full blur-xl" />
+                        <Medal className="w-10 h-10 text-gray-400 mb-2 drop-shadow-[0_0_8px_rgba(156,163,175,0.5)]" />
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">2nd Prize</p>
+                        <p className="text-xl font-heading font-bold text-gray-300">₹{prizePool.second}</p>
+                      </div>
+                    )}
+                    {prizePool.third > 0 && (
+                      <div className="flex flex-col items-center p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 relative overflow-hidden group hover:scale-105 transition-premium">
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-orange-500/10 rounded-full blur-xl" />
+                        <Medal className="w-10 h-10 text-orange-500 mb-2 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">3rd Prize</p>
+                        <p className="text-xl font-heading font-bold text-orange-400">₹{prizePool.third}</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="glass glow-border-hover transition-premium overflow-hidden">
             <CardHeader><CardTitle className="font-heading">Event Details</CardTitle></CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
