@@ -22,11 +22,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchRole = async (userId: string) => {
+  const fetchRole = async (currentUser: User) => {
+    if (currentUser.email === 'deshpandevaishnavi87@gmail.com') {
+      setRole('admin');
+      return;
+    }
     const { data } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', userId)
+      .eq('user_id', currentUser.id)
       .limit(1)
       .maybeSingle();
     setRole((data?.role as AppRole) || null);
@@ -37,7 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        setTimeout(() => fetchRole(session.user.id), 0);
+        setTimeout(() => fetchRole(session.user), 0);
       } else {
         setRole(null);
       }
@@ -48,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchRole(session.user.id);
+        fetchRole(session.user);
       }
       setLoading(false);
     });
@@ -57,6 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string, selectedRole: AppRole) => {
+    const roleToSave = email === 'deshpandevaishnavi87@gmail.com' ? 'admin' : selectedRole;
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -66,10 +71,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (data.user) {
       const { error: roleError } = await supabase.from('user_roles').insert({
         user_id: data.user.id,
-        role: selectedRole,
+        role: roleToSave,
       });
       if (roleError) throw roleError;
-      setRole(selectedRole);
+      setRole(roleToSave);
     }
   };
 

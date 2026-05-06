@@ -3,7 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Ticket, XCircle, Calendar, IndianRupee } from 'lucide-react';
+import { Ticket, XCircle, Calendar, IndianRupee, QrCode } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import QRTicket from '@/components/QRTicket';
 
 const Bookings = () => {
   const queryClient = useQueryClient();
@@ -78,9 +80,29 @@ const Bookings = () => {
                     {booking.status}
                   </span>
                   {booking.status === 'confirmed' && (
-                    <Button variant="ghost" size="sm" onClick={() => cancelBooking.mutate(booking.id)}>
-                      <XCircle className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-2">
+                            <QrCode className="w-4 h-4" /> View Ticket
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[400px] p-0 border-none bg-transparent shadow-none">
+                          <DialogTitle className="sr-only">Your Ticket</DialogTitle>
+                          <DialogDescription className="sr-only">Scan this QR code at the venue</DialogDescription>
+                          <QRTicket
+                            bookingId={booking.id}
+                            eventTitle={(booking.events as any)?.title}
+                            ticketType={booking.ticket_type}
+                            quantity={booking.quantity}
+                            date={(booking.events as any)?.start_date}
+                          />
+                        </DialogContent>
+                      </Dialog>
+                      <Button variant="ghost" size="sm" onClick={() => cancelBooking.mutate(booking.id)} title="Cancel Booking">
+                        <XCircle className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardContent>

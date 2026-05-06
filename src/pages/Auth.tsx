@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Shield, Mic, Ticket, CheckCircle, Calendar, ArrowLeft, Sparkles } from 'lucide-react';
+import { Shield, Mic, Ticket, CheckCircle, Calendar, ArrowLeft, Sparkles, Mail, KeyRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 type AppRole = 'admin' | 'organizer' | 'participant';
 
 const roles: { value: AppRole; label: string; icon: typeof Shield; desc: string }[] = [
-  { value: 'admin', label: 'Admin', icon: Shield, desc: 'Manage the entire platform' },
   { value: 'organizer', label: 'Organizer', icon: Mic, desc: 'Create and manage events' },
   { value: 'participant', label: 'Participant', icon: Ticket, desc: 'Browse and book events' },
 ];
@@ -26,6 +26,9 @@ const Auth = () => {
   const [signupDone, setSignupDone] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [signupForm, setSignupForm] = useState({ email: '', password: '', fullName: '' });
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
 
   if (user) {
     navigate('/dashboard', { replace: true });
@@ -39,6 +42,23 @@ const Auth = () => {
       await signIn(loginForm.email, loginForm.password);
       toast.success('Welcome back!');
       navigate('/dashboard');
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setResetSent(true);
+      toast.success('Password reset link sent! Check your email.');
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -146,7 +166,57 @@ const Auth = () => {
                     <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-premium shadow-lg shadow-primary/25 h-11" disabled={loading}>
                       {loading ? 'Signing in...' : 'Sign In'}
                     </Button>
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="w-full text-center text-sm text-primary hover:text-primary/80 transition-premium mt-2"
+                    >
+                      Forgot your password?
+                    </button>
                   </form>
+
+                  {/* Forgot Password Modal */}
+                  {showForgotPassword && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => { setShowForgotPassword(false); setResetSent(false); }}>
+                      <div className="w-full max-w-sm mx-4 glass glow-border rounded-2xl p-6 space-y-5 animate-scale-in" onClick={e => e.stopPropagation()}>
+                        {resetSent ? (
+                          <div className="text-center space-y-4">
+                            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto neon-glow">
+                              <Mail className="w-8 h-8 text-primary" />
+                            </div>
+                            <h3 className="font-heading font-semibold text-lg">Check your email</h3>
+                            <p className="text-sm text-muted-foreground">
+                              We sent a password reset link to <strong className="text-foreground">{forgotEmail}</strong>. Click the link to set a new password.
+                            </p>
+                            <Button variant="outline" onClick={() => { setShowForgotPassword(false); setResetSent(false); }} className="glow-border-hover">Back to Sign In</Button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-center">
+                              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                                <KeyRound className="w-7 h-7 text-primary" />
+                              </div>
+                              <h3 className="font-heading font-semibold text-lg">Reset Password</h3>
+                              <p className="text-sm text-muted-foreground mt-1">Enter your email and we'll send you a reset link.</p>
+                            </div>
+                            <form onSubmit={handleForgotPassword} className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="forgot-email" className="text-sm">Email</Label>
+                                <Input id="forgot-email" type="email" required placeholder="you@example.com" className="bg-secondary/30 border-border/50 focus:border-primary/50 focus:ring-primary/20" value={forgotEmail}
+                                  onChange={e => setForgotEmail(e.target.value)} />
+                              </div>
+                              <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-premium shadow-lg shadow-primary/25 h-11" disabled={loading}>
+                                {loading ? 'Sending...' : 'Send Reset Link'}
+                              </Button>
+                              <button type="button" onClick={() => setShowForgotPassword(false)} className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-premium">
+                                Back to Sign In
+                              </button>
+                            </form>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="signup" className="mt-0">
@@ -181,7 +251,7 @@ const Auth = () => {
 
                       <div className="space-y-2">
                         <Label className="text-sm">Select Your Role</Label>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                           {roles.map(r => (
                             <button key={r.value} type="button"
                               onClick={() => setSelectedRole(r.value)}

@@ -13,6 +13,9 @@ import {
   Calendar, MapPin, Users, IndianRupee, ArrowLeft, Ticket, Clock,
   Star, Tag, Zap, Shield, Sparkles,
 } from 'lucide-react';
+import CountdownTimer from '@/components/CountdownTimer';
+import SocialShare from '@/components/SocialShare';
+import WeatherWidget from '@/components/WeatherWidget';
 
 const EventDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -108,6 +111,11 @@ const EventDetail = () => {
                 )}
               </div>
             </div>
+            {event.status === 'open' && (
+              <div className="glass px-6 py-4 rounded-2xl glow-border">
+                <CountdownTimer targetDate={event.start_date} />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -150,6 +158,20 @@ const EventDetail = () => {
                   </div>
                 </div>
               )}
+              {/* Google Maps Embed */}
+              {event.venues && (
+                <div className="sm:col-span-2 rounded-xl overflow-hidden glow-border" style={{ height: '250px' }}>
+                  <iframe
+                    title="Venue Location"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://www.google.com/maps?q=${encodeURIComponent(`${(event.venues as any).name}, ${(event.venues as any).address}, ${(event.venues as any).city}`)}&output=embed`}
+                  />
+                </div>
+              )}
               <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 sm:col-span-2">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                   <Users className="w-5 h-5 text-neon-cyan" />
@@ -164,6 +186,11 @@ const EventDetail = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Weather Widget */}
+          {event.venues && (
+            <WeatherWidget city={(event.venues as any).city} date={event.start_date} />
+          )}
 
           {/* Reviews */}
           {feedbacks && feedbacks.length > 0 && (
@@ -255,6 +282,12 @@ const EventDetail = () => {
               </CardContent>
             </Card>
           )}
+
+          <Card className="glass glow-border overflow-hidden">
+            <CardContent className="p-6">
+              <SocialShare title={event.title} description={event.description || 'Join this amazing event on EventHub!'} />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
