@@ -23,17 +23,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchRole = async (currentUser: User) => {
-    if (currentUser.email === 'deshpandevaishnavi87@gmail.com') {
-      setRole('admin');
-      return;
-    }
-    const { data } = await supabase
+    const { data: existingRole, error: fetchError } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', currentUser.id)
       .limit(1)
       .maybeSingle();
-    setRole((data?.role as AppRole) || null);
+
+    if (currentUser.email === 'deshpandevaishnavi87@gmail.com') {
+      setRole('admin');
+      // If the admin role is missing in the DB, sync it so RLS works
+      if (!existingRole || existingRole.role !== 'admin') {
+        await supabase.from('user_roles').upsert({
+          user_id: currentUser.id,
+          role: 'admin'
+        }, { onConflict: 'user_id,role' });
+      }
+      return;
+    }
+    
+    setRole((existingRole?.role as AppRole) || null);
   };
 
   useEffect(() => {

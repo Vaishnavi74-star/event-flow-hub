@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import AIAssistant from '@/components/AIAssistant';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   LayoutDashboard, Calendar, Ticket, Users, BarChart3, MapPin, Tag,
   LogOut, Menu, MessageSquare, User, X, Settings, Plus, ChevronLeft,
@@ -120,7 +121,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex-1" />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
             {(role === 'organizer' || role === 'admin') && (
               <Button size="sm" className="bg-gradient-primary hover:opacity-90 gap-1.5 shadow-md shadow-primary/20 transition-premium" onClick={() => navigate('/events')}>
                 <Plus className="w-4 h-4" /> New Event

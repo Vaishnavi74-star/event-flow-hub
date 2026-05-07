@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Calendar, Menu, X } from 'lucide-react';
 import { useState } from 'react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -32,6 +33,7 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
+          <ThemeToggle />
           <Link to="/auth">
             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">Sign In</Button>
           </Link>

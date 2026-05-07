@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Shield, Mic, Ticket, CheckCircle, Calendar, ArrowLeft, Sparkles, Mail, KeyRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 type AppRole = 'admin' | 'organizer' | 'participant';
 
@@ -87,6 +88,10 @@ const Auth = () => {
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/8 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-accent/6 rounded-full blur-[100px]" />
         <div className="bg-grid absolute inset-0 opacity-20" />
+      </div>
+
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeToggle />
       </div>
 
       {/* Left panel - branding */}
